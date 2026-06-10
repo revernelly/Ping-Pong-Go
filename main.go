@@ -25,6 +25,7 @@ var screen tcell.Screen
 var player1Paddle *GameObject
 var player2Paddle *GameObject
 var ball *GameObject
+var isGamePaused bool
 var debugLog string
 
 var gameObjects []*GameObject
@@ -47,13 +48,29 @@ func main() {
 }
 
 func updateState() {
+	if isGamePaused {
+		return
+	}
+
 	for i := range gameObjects {
 		gameObjects[i].row += gameObjects[i].velRow
 		gameObjects[i].col += gameObjects[i].velCol
 	}
+
+	if collidesWithWall(ball) {
+		ball.velRow = -ball.velRow
+	}
+
+	if collidesWithPaddle(ball, player1Paddle) || collidesWithPaddle(ball, player2Paddle) {
+		ball.velCol = -ball.velCol
+	}
 }
 
 func drawState() {
+	if isGamePaused {
+		return
+	}
+
 	screen.Clear()
 	screen.SetTitle("Ping Pong")
 
@@ -64,6 +81,24 @@ func drawState() {
 	}
 
 	screen.Show()
+}
+
+func collidesWithWall(obj *GameObject) bool {
+	_, screenHeight := screen.Size()
+	return obj.row+obj.velRow < 0 || obj.row+obj.velRow >= screenHeight
+}
+
+func collidesWithPaddle(ball *GameObject, paddle *GameObject) bool {
+	var collidesOnColumn bool
+	if ball.col < paddle.col {
+		collidesOnColumn = ball.col+ball.velCol >= paddle.col
+	} else {
+		collidesOnColumn = ball.col+ball.velCol <= paddle.col
+	}
+
+	return collidesOnColumn &&
+		ball.row >= paddle.row &&
+		ball.row < paddle.row+paddle.height
 }
 
 func initScreen() {
@@ -98,6 +133,8 @@ func HandleUserInput(key string) {
 		player2Paddle.row--
 	} else if key == "Down" && player2Paddle.row+player2Paddle.height < screenHeight {
 		player2Paddle.row++
+	} else if key == "Rune[p]" {
+		isGamePaused = !isGamePaused
 	}
 }
 
