@@ -37,14 +37,22 @@ func main() {
 
 	inputChan := InitUserInput()
 
-	for {
+	for !isGameOver() {
 		HandleUserInput(ReadInput(inputChan))
 		updateState()
 		drawState()
 
-		time.Sleep(75 * time.Millisecond)
-
+		time.Sleep(100 * time.Millisecond)
 	}
+
+	screenWidth, screenHeight := screen.Size()
+	winner := getWinner()
+	PrintStringCentered(screenHeight/2-1, screenWidth/2, "Game Over...")
+	PrintStringCentered(screenHeight/2, screenWidth/2, fmt.Sprintf("%s wins...", winner))
+	screen.Show()
+
+	time.Sleep(3 * time.Second)
+	screen.Fini()
 }
 
 func updateState() {
@@ -99,6 +107,22 @@ func collidesWithPaddle(ball *GameObject, paddle *GameObject) bool {
 	return collidesOnColumn &&
 		ball.row >= paddle.row &&
 		ball.row < paddle.row+paddle.height
+}
+
+func isGameOver() bool {
+	return getWinner() != ""
+}
+
+func getWinner() string {
+	screenWidth, _ := screen.Size()
+
+	if ball.col < 0 {
+		return "Player 1"
+	} else if ball.col >= screenWidth {
+		return "Player 2"
+	} else {
+		return ""
+	}
 }
 
 func initScreen() {
@@ -187,6 +211,11 @@ func ReadInput(inputChan chan string) string {
 		key = ""
 	}
 	return key
+}
+
+func PrintStringCentered(row, col int, str string) {
+	col = col - len(str)/2
+	PrintString(row, col, str)
 }
 
 func PrintString(row, col int, str string) {
